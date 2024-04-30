@@ -1,4 +1,6 @@
 /* eslint-disable no-unused-vars */
+require('dotenv').config();
+console.log('JWT Secret:', process.env.JWT_SECRET);
 
 const express = require('express'); // Here I imported the Express library
 const mongoose = require('mongoose');

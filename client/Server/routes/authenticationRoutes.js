@@ -1,7 +1,10 @@
+/* eslint-disable no-unused-vars */
 const express = require('express');
 const bcrypt = require('bcrypt');
 const appUsers = require('../models/appUsers');
 const router = express.Router();
+const jwt = require('jsonwebtoken')
+
 
 // Creation of registration endpoint:
 
@@ -37,9 +40,15 @@ router.post('/register', async (req, res) => {
   
       // This will save the user's information in my database
       const savedUser = await newUser.save();
-  
+      // This is for after the user has been created
+      const token = jwt.sign(
+        { userId: savedUser._id, email: savedUser.email },
+        process.env.JWT_SECRET, 
+        { expiresIn: '30mins' }
+      );
+
       // This code sends a response which comes with the user's new details, without their password for security purposes, or returns an error message if the user creation process failed.
-      res.status(201).json({ userId: savedUser._id, username: savedUser.username, email: savedUser.email, age: savedUser.age, profilePicture: savedUser.profilePicture });
+      res.status(201).json({ message: 'Your account has successfully been created!',  userId: savedUser._id, username: savedUser.username, email: savedUser.email, age: savedUser.age, profilePicture: savedUser.profilePicture, token: token });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -58,8 +67,16 @@ router.post('/register', async (req, res) => {
       });
   
       if (user && await bcrypt.compare(req.body.password, user.password)) {
-        // This piece of code prints out a message indicating that the user's account has been authenticated successfully
-        res.status(200).json({ message: 'Login successful', userId: user._id });
+
+        // This is for after the user's password has been validated
+      const token = jwt.sign(
+        { userId: user._id, email: user.email },
+       process.env.JWT_SECRET,  // This should match the variable name in your .env file
+        { expiresIn: '30mins' }
+      );
+
+        // This line of code sends the token to the client (new user)
+        res.json({ message: 'Login successful!', userId: user._id, token: token });
       } else {
         // This piece of code prints out a message indicating that the authentication has failed.
         res.status(401).json({ message: 'Invalid credentials' });
@@ -67,6 +84,7 @@ router.post('/register', async (req, res) => {
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
+
   });
   
   module.exports = router;
